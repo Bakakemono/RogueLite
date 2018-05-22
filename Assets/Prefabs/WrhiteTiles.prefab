@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 4085174236029052}
   - component: {fileID: 212691417492592940}
   m_Layer: 0
-  m_Name: WriteTiles
+  m_Name: WrhiteTiles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

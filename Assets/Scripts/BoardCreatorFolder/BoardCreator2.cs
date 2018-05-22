@@ -21,19 +21,20 @@ public class BoardCreator2 : MonoBehaviour
 
     public TileType[][] tiles;               
     public Vector2[][] TilesPosition;
-    private Room[] rooms;                      
+    public Room[] rooms;                      
     private Corridor[] corridors;                  
-    private GameObject boardHolder;                  
-    private GameObject boardHolder2;
+    private GameObject FloorHolder;                  
+    private GameObject WallHolder;
     private bool isPlayerSpawn = false;
     private PlayerControler Player;
     private Vector2Int PlayerSpawn;
+    public Vector2Int[][] PatrolPoint;
 
 
     private void Awake()
     {
-        boardHolder = new GameObject("BoardHolder");
-        boardHolder2 = new GameObject("BoardHolder2");
+        FloorHolder = new GameObject("FloorHolder");
+        WallHolder = new GameObject("WallHolder");
         SetupTilesArray();
 
         CreateRoomsAndCorridors();
@@ -63,7 +64,11 @@ public class BoardCreator2 : MonoBehaviour
         void CreateRoomsAndCorridors()
         {
             rooms = new Room[numRooms.Random];
-        
+            PatrolPoint = new Vector2Int[rooms.Length][];
+            for(int i = 0; i<rooms.Length; i++)
+            {
+            PatrolPoint[i] = new Vector2Int[4];
+            }
             corridors = new Corridor[rooms.Length - 1];
         
             rooms[0] = new Room();
@@ -91,6 +96,7 @@ public class BoardCreator2 : MonoBehaviour
 
         void SetTilesValuesForRooms()
         {
+        bool IsEnemi = false;
             for (int i = 0; i < rooms.Length; i++)
             {
                 Room currentRoom = rooms[i];
@@ -107,9 +113,20 @@ public class BoardCreator2 : MonoBehaviour
                         if (!isPlayerSpawn)
                         {
                             tiles[xCoord][yCoord] = TileType.playerSpawn;
-                        PlayerSpawn = new Vector2Int(xCoord, yCoord);
+                            PlayerSpawn = new Vector2Int(xCoord, yCoord);
                             isPlayerSpawn = true;
+                            IsEnemi = true;
                         }
+                        else if(!IsEnemi)
+                        {
+                        tiles[xCoord][yCoord] = TileType.playerSpawn;
+                        IsEnemi = true;
+                        PatrolPoint[i][0] = new Vector2Int(xCoord, yCoord);
+                        PatrolPoint[i][1] = new Vector2Int(xCoord + currentRoom.roomWidth, yCoord);
+                        PatrolPoint[i][2] = new Vector2Int(xCoord + currentRoom.roomWidth, yCoord + currentRoom.roomHeight);
+                        PatrolPoint[i][3] = new Vector2Int(xCoord, yCoord + currentRoom.roomHeight);
+                    }
+
                     }
                 }
             }
@@ -150,34 +167,6 @@ public class BoardCreator2 : MonoBehaviour
             }
         }
 
-
-        void InstantiateTiles()
-        {
-            for (int i = 0; i < tiles.Length; i++)
-            {
-                for (int j = 0; j < tiles[i].Length; j++)
-                {
-                    InstantiateFromArray(floorTiles, i, j);
-                
-                    if (tiles[i][j] == TileType.Wall)
-                    {
-                        InstantiateFromArray(wallTiles, i, j);
-                    }
-                }
-            }
-        }
-
-        void InstantiateFromArray(GameObject[] prefabs, float xCoord, float yCoord)
-        {
-            int randomIndex = Random.Range(0, prefabs.Length);
-        
-            Vector3 position = new Vector3(xCoord - columns / 2, yCoord - rows / 2, 0f);
-        
-            GameObject tileInstance = Instantiate(prefabs[randomIndex], position, Quaternion.identity) as GameObject;
-        
-            tileInstance.transform.parent = boardHolder.transform;
-        }
-
         private void InstancingWorld()
         {
             for (int i = 0; i < tiles.Length; i++)
@@ -192,14 +181,14 @@ public class BoardCreator2 : MonoBehaviour
                     {
                         int randomIndex = Random.Range(0, floorTiles.Length);
                         GameObject tileInstance = Instantiate(floorTiles[randomIndex], new Vector3(_x, _y, 0f), Quaternion.identity) as GameObject;
-                        tileInstance.transform.parent = boardHolder.transform;
+                        tileInstance.transform.parent = FloorHolder.transform;
                     }
 
                     else if (tiles[i][j] == TileType.Wall)
                     {
                         int randomIndex = Random.Range(0, wallTiles.Length);
                         GameObject tileInstance = Instantiate(wallTiles[randomIndex], new Vector3(_x, _y, 0f), Quaternion.identity);
-                        tileInstance.transform.parent = boardHolder2.transform;
+                        tileInstance.transform.parent = WallHolder.transform;
                     }
                 }
             }

@@ -27,6 +27,8 @@ public class EnemiScript : MonoBehaviour {
     private Vector2 LastPlayerPos;
 
     private Rigidbody2D body;
+    private BoardCreator2 Board;
+    private int choiceRoomPatrol;
     
 
     // Use this for initialization
@@ -34,6 +36,8 @@ public class EnemiScript : MonoBehaviour {
         body = GetComponent<Rigidbody2D>();
         playerPosition = FindObjectOfType<PlayerControler>().transform;
         pathFinding = GetComponent<PathFinding>();
+        Board = FindObjectOfType<BoardCreator2>();
+        choiceRoomPatrol = Mathf.RoundToInt(Random.Range(1, Board.rooms.Length));
         
     }
 	
