@@ -142,8 +142,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   child: {fileID: 1501825250058000, guid: a2ba760d863685c42be0823f132b8c10, type: 2}
   PathPoints: []
+  targetPos: {x: 0, y: 0}
   _sizeX: 30
   _sizeY: 30
+  _mazeGeneratorType: 0
 --- !u!4 &407846067
 Transform:
   m_ObjectHideFlags: 0
@@ -175,7 +177,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!212 &440161267
 SpriteRenderer:
   m_ObjectHideFlags: 0

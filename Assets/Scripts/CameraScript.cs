@@ -13,9 +13,17 @@ public class CameraScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        if (Vector2.Distance(transform.position, player.position) > 0.5f)
+        while(player == null)
         {
-            transform.position = new Vector3(Mathf.Lerp(transform.position.x, player.position.x, 0.1f), Mathf.Lerp(transform.position.y, player.position.y, 0.1f), -10.0f);
+            player = FindObjectOfType<PlayerControler>().transform;
         }
+        if (player != null)
+        {
+            if (Vector2.Distance(transform.position, player.position) > 0.1f)
+            {
+                transform.position = new Vector3(Mathf.Lerp(transform.position.x, player.position.x, 0.5f), Mathf.Lerp(transform.position.y, player.position.y, 0.1f), -10.0f);
+            }
+        }
+        
     }
 }
