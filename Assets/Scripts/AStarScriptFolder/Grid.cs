@@ -5,7 +5,7 @@ using UnityEngine;
 public class Grid : MonoBehaviour {
 
 
-    private Vector2 GridWorldSize;
+    public Vector2 GridWorldSize;
     public float NodesRadius;
     public float Distance;
     private BoardCreator2 Board;
@@ -39,7 +39,7 @@ public class Grid : MonoBehaviour {
                 Vector2 worldPoint = Board.TilesPosition[x][y];
                 bool Wall = true;
 
-                if (Board.tiles[x][y] == BoardCreator2.TileType.Floor || Board.tiles[x][y] == BoardCreator2.TileType.playerSpawn)//DEFINIR SI C'EST UN MUR OU NON
+                if (Board.tiles[x][y] == BoardCreator2.TileType.Floor || Board.tiles[x][y] == BoardCreator2.TileType.playerSpawn)
                 {
                     Wall = false;
                 }
@@ -51,9 +51,8 @@ public class Grid : MonoBehaviour {
     public Node NodeFromWorldPosition(Vector2 a_WorldPosition)
     {
 
-        int x = Mathf.RoundToInt((a_WorldPosition.x + GridWorldSize.x - 3)/2);
-        int y = Mathf.RoundToInt((a_WorldPosition.y + GridWorldSize.y - 1)/2);
-        Debug.Log("Pos :" + x + " / " + y);
+        int x = Mathf.RoundToInt((a_WorldPosition.x + GridWorldSize.x) /2);
+        int y = Mathf.RoundToInt((a_WorldPosition.y + GridWorldSize.y) /2);
 
         return grid[x, y];
     }

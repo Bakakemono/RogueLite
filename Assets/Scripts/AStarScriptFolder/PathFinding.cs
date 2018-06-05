@@ -6,8 +6,10 @@ public class PathFinding : MonoBehaviour {
 
     private Grid grid;
     public Transform StartPosition;
-    public Transform TargetPosition;
+    private Transform TargetPosition;
+    private GameObject Player;
     public List<Node> finalPath;
+    private EnemiScript enemy;
 
     private void Awake()
     {
@@ -15,9 +17,30 @@ public class PathFinding : MonoBehaviour {
         StartPosition = gameObject.transform;
     }
 
+    private void Start()
+    {
+        if (FindObjectOfType<PlayerControler>())
+        {
+            Player = FindObjectOfType<PlayerControler>().gameObject;
+        }
+        TargetPosition = Player.transform;
+
+        enemy = GetComponent<EnemiScript>();
+    }
+
     private void Update()
     {
-        FindPath(StartPosition.position, TargetPosition.position);
+        if (Player == null)
+        {
+            Player = FindObjectOfType<PlayerControler>().gameObject;
+            TargetPosition = Player.transform;
+        }
+    }
+
+    public void useFindPath(Vector3 Target)
+    {
+        if(TargetPosition)
+        FindPath(StartPosition.position, Target);
     }
 
     private void FindPath(Vector2 a_StartPosition, Vector2 a_TargetPosition)

@@ -9,8 +9,8 @@ public class BoardCreator2 : MonoBehaviour
     }
 
 
-    [SerializeField] public int columns = 100;
-    [SerializeField] public int rows = 100;
+    [SerializeField] public int columns = 30;
+    [SerializeField] public int rows = 30;
     [SerializeField] private IntRange numRooms = new IntRange(15, 20);
     [SerializeField] private IntRange roomWidth = new IntRange(3, 10);
     [SerializeField] private IntRange roomHeight = new IntRange(3, 10);
@@ -18,6 +18,7 @@ public class BoardCreator2 : MonoBehaviour
     [SerializeField] private GameObject[] floorTiles;
     [SerializeField] private GameObject[] wallTiles;
     [SerializeField] private GameObject player;
+    [SerializeField] private EnemiScript Enemi;
 
     public TileType[][] tiles;               
     public Vector2[][] TilesPosition;
@@ -26,21 +27,25 @@ public class BoardCreator2 : MonoBehaviour
     private GameObject FloorHolder;                  
     private GameObject WallHolder;
     private bool isPlayerSpawn = false;
-    private PlayerControler Player;
     private Vector2Int PlayerSpawn;
-    public Vector2Int[][] PatrolPoint;
+    private Grid Grid;
 
 
     private void Awake()
     {
         FloorHolder = new GameObject("FloorHolder");
         WallHolder = new GameObject("WallHolder");
+
         SetupTilesArray();
 
         CreateRoomsAndCorridors();
 
         SetTilesValuesForRooms();
         SetTilesValuesForCorridors();
+
+        //ATTENTION A CHANGER
+        Grid = FindObjectOfType<Grid>();
+        Grid.GridWorldSize = new Vector2(rows, columns);
 
         InstancingWorld();
         SpawnPlayer();
@@ -57,18 +62,12 @@ public class BoardCreator2 : MonoBehaviour
         {
             tiles[i] = new TileType[rows];
             TilesPosition[i] = new Vector2[rows];
-
         }
     }
 
         void CreateRoomsAndCorridors()
         {
             rooms = new Room[numRooms.Random];
-            PatrolPoint = new Vector2Int[rooms.Length][];
-            for(int i = 0; i<rooms.Length; i++)
-            {
-            PatrolPoint[i] = new Vector2Int[4];
-            }
             corridors = new Corridor[rooms.Length - 1];
         
             rooms[0] = new Room();
@@ -96,11 +95,11 @@ public class BoardCreator2 : MonoBehaviour
 
         void SetTilesValuesForRooms()
         {
-        bool IsEnemi = false;
             for (int i = 0; i < rooms.Length; i++)
             {
                 Room currentRoom = rooms[i];
-            
+                bool IsEnemi = false;
+
                 for (int j = 0; j < currentRoom.roomWidth; j++)
                 {
                     int xCoord = currentRoom.xPos + j;
@@ -117,15 +116,24 @@ public class BoardCreator2 : MonoBehaviour
                             isPlayerSpawn = true;
                             IsEnemi = true;
                         }
-                        else if(!IsEnemi)
+                        else if(!IsEnemi && Vector2Int.Distance(PlayerSpawn, new Vector2Int(xCoord, yCoord)) > 7)
                         {
-                        tiles[xCoord][yCoord] = TileType.playerSpawn;
-                        IsEnemi = true;
-                        PatrolPoint[i][0] = new Vector2Int(xCoord, yCoord);
-                        PatrolPoint[i][1] = new Vector2Int(xCoord + currentRoom.roomWidth, yCoord);
-                        PatrolPoint[i][2] = new Vector2Int(xCoord + currentRoom.roomWidth, yCoord + currentRoom.roomHeight);
-                        PatrolPoint[i][3] = new Vector2Int(xCoord, yCoord + currentRoom.roomHeight);
-                    }
+                            IsEnemi = true;
+
+                            Vector2[] PatrolPoints = new Vector2[4];
+
+                            PatrolPoints[0] = new Vector2(xCoord * 2 + 1 - columns, yCoord * 2 + 1 - rows);
+                            PatrolPoints[1] = new Vector2(xCoord * 2 + 1 - columns + currentRoom.roomWidth * 2 - 2, yCoord * 2 + 1 - rows);
+                            PatrolPoints[2] = new Vector2(xCoord * 2 + 1 - columns + currentRoom.roomWidth * 2 - 2, yCoord * 2 + 1 - rows + currentRoom.roomHeight * 2 - 2);
+                            PatrolPoints[3] = new Vector2(xCoord * 2 + 1 - columns, yCoord * 2 + 1 - rows + currentRoom.roomHeight * 2 - 2);
+
+                            GameObject EnemiInstance = Instantiate(Enemi.gameObject, new Vector3(xCoord * 2 + 1 - columns, yCoord * 2 + 1 - rows, 0f), Quaternion.identity);
+                            EnemiInstance.GetComponent<EnemiScript>().setPatrolPoint(PatrolPoints);
+                        }
+                        else
+                        {
+                            IsEnemi = true;
+                        }
 
                     }
                 }

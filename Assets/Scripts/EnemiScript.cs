@@ -9,68 +9,52 @@ public class EnemiScript : MonoBehaviour {
         Patrol,
         Follow,
         Attack,
-        Shearch,
+        ReturnPatrol,
     }
-    private EnemiStatus _EnemiStatus = EnemiStatus.Patrol;
+    [SerializeField] private EnemiStatus _EnemiStatus = EnemiStatus.Patrol;
 
     private PathFinding pathFinding;
-    private PlayerControler player;
     private Vector2[] PatrolPointsLists;
-    private Vector2 PatrolPoint;
     private float moveSpeed = 4;
     private int choicePatrol = 0;
-    private int ChoiceFollow = 0;
-    private int DistanceAttack = 8;
-    private int DistanceShoot = 4;
+    [SerializeField] private float maxDistCheckPlayer = 10.0f;
+    [SerializeField] private LayerMask WallLayerMask;
 
-    private Transform playerPosition;
+    private Transform playerTransform;
     private Vector2 LastPlayerPos;
 
+
     private Rigidbody2D body;
-    private BoardCreator2 Board;
     private int choiceRoomPatrol;
-    
+    public Vector3 enemyTarget;
+    private bool findPathPatrol = false;
+    private bool findPlayer = false;
+    RaycastHit2D notSeePlayer;
+
+
 
     // Use this for initialization
     void Start () {
         body = GetComponent<Rigidbody2D>();
-        playerPosition = FindObjectOfType<PlayerControler>().transform;
+        playerTransform = FindObjectOfType<PlayerControler>().transform;
         pathFinding = GetComponent<PathFinding>();
-        Board = FindObjectOfType<BoardCreator2>();
-        choiceRoomPatrol = Mathf.RoundToInt(Random.Range(1, Board.rooms.Length));
-        
+        enemyTarget = playerTransform.position;
+        pathFinding.useFindPath(enemyTarget);
     }
 	
 	// Update is called once per frame
 	void Update () {
-        if(playerPosition == null)
-            playerPosition = FindObjectOfType<PlayerControler>().transform;
+        if (playerTransform == null)
+        {
+            playerTransform = FindObjectOfType<PlayerControler>().transform;
+            enemyTarget = playerTransform.position;
+        }
 
-        if (Vector2.Distance(transform.position, playerPosition.position) < DistanceAttack)
-        {
-            _EnemiStatus = EnemiStatus.Attack;
-        }
-        else
-        {
-            _EnemiStatus = EnemiStatus.Patrol;
-        }
+        if(pathFinding.finalPath == null)
+            pathFinding.useFindPath(enemyTarget);
+
+        notSeePlayer = Physics2D.Linecast(transform.position, playerTransform.position, WallLayerMask);
         EnemiStat();
-	}
-
-    private void PathFollower()
-    {
-        ////PatrolPoint = pathFinding.finalPath[ChoiceFollow].Position;
-        ////if(Vector2.Distance(transform.position, PatrolPoint) > 2.0f)
-        ////{
-        ////    pathFinding.finalPath.Remove(pathFinding.finalPath[ChoiceFollow]);
-        ////    PatrolPoint =  pathFinding.finalPath[ChoiceFollow].Position;
-        ////}
-            
-        ////body.velocity = new Vector2(PatrolPoint.x - transform.position.x, PatrolPoint.y - transform.position.y).normalized * moveSpeed;
-        ////if (Vector2.Distance(transform.position, PatrolPoint) < 0.1f)
-        ////{
-        ////pathFinding.finalPath.Remove(pathFinding.finalPath[ChoiceFollow]);
-        ////}
     }
 
     private void EnemiStat()
@@ -79,53 +63,120 @@ public class EnemiScript : MonoBehaviour {
         {
             case EnemiStatus.Patrol:
                 {
-                    //body.velocity = Vector2.MoveTowards(transform.position, PatrolPoint, moveSpeed * Time.deltaTime);
-                    //if (Vector2.Distance(transform.position, PatrolPoint) < 0.1f)
-                    //{
-                    //    choicePatrol++;
-                    //    PatrolPoint = PatrolPointsLists[choicePatrol];
-                    //    if (choicePatrol + 1 == PatrolPointsLists.Length)
-                    //    {
-                    //        choicePatrol = 0;
-                    //    }
+                    findPathPatrol = false;
+                    Debug.Log("patrol");
+                    body.velocity = new Vector2(    PatrolPointsLists[choicePatrol].x - transform.position.x,
+                                                    PatrolPointsLists[choicePatrol].y - transform.position.y).normalized
+                                                    * moveSpeed;
 
-                    //}
-                    body.velocity = new Vector2(0, 0);
-                }
-                break;
-
-            case EnemiStatus.Attack:
-                {
-                    Vector3 diff = playerPosition.position - transform.position;
+                    Vector3 diff = new Vector3(PatrolPointsLists[choicePatrol].x, PatrolPointsLists[choicePatrol].y, 0.0f) - transform.position;
                     diff.Normalize();
 
                     float rot_z = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
                     transform.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);
 
-                    if (Vector2.Distance(transform.position, playerPosition.position) > DistanceShoot)
+                    if (!notSeePlayer && Vector2.Distance(transform.position, playerTransform.position) < 8)
                     {
-                        body.velocity = new Vector2(playerPosition.position.x - transform.position.x, playerPosition.position.y - transform.position.y).normalized * moveSpeed;
+                        _EnemiStatus = EnemiStatus.Follow;
                     }
 
+                    if (Vector2.Distance(transform.position, PatrolPointsLists[choicePatrol]) < 0.1f)
+                    {
+                        choicePatrol++;
+                        if (choicePatrol == PatrolPointsLists.Length)
+                        {
+                            choicePatrol = 0;
+                        }
+                    }
+                }
+                break;
+
+            case EnemiStatus.Attack:
+                {
+                    findPathPatrol = false;
+                    Debug.Log("attack");
+                    body.velocity = new Vector2(0, 0);
+                    Vector3 diff = playerTransform.position - transform.position;
+                    diff.Normalize();
+
+                    float rot_z = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
+                    transform.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);
+
+                    if (notSeePlayer || Vector2.Distance(transform.position, playerTransform.position) > 4)
+                    {
+                        _EnemiStatus = EnemiStatus.Follow;
+                    }
                 }
                 break;
 
             case EnemiStatus.Follow:
                 {
-                    if (LastPlayerPos != new Vector2(playerPosition.position.x, playerPosition.position.y))
-                       ChoiceFollow = 0;
-
-                    body.velocity = Vector2.MoveTowards(transform.position, pathFinding.finalPath[ChoiceFollow].Position, moveSpeed * Time.deltaTime);
-                    if (Vector2.Distance(transform.position, PatrolPoint) < 0.1f)
+                    findPathPatrol = false;
+                    Debug.Log("follow");
+                    if (!notSeePlayer || Vector2.Distance(transform.position, playerTransform.position) < 3)
                     {
-                        ChoiceFollow++;
+                        _EnemiStatus = EnemiStatus.Attack;
+                    }
+
+                    if (notSeePlayer || Vector2.Distance(transform.position, playerTransform.position) > 7)
+                    {
+                            StartCoroutine(LosePlayer());
+                    }
+
+                    Vector3 diff = new Vector3(pathFinding.finalPath[1].Position.x - transform.position.x, pathFinding.finalPath[1].Position.y - transform.position.y, 0.0f);
+                    diff.Normalize();
+
+                    float rot_z = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
+                    transform.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);
+
+                    body.velocity = new Vector2(    pathFinding.finalPath[1].Position.x - transform.position.x,
+                                                    pathFinding.finalPath[1].Position.y - transform.position.y).normalized * moveSpeed;
+
+                    if (Vector2.Distance(transform.position, pathFinding.finalPath[1].Position) < 0.1f)
+                    {
+                        pathFinding.useFindPath(enemyTarget);
                     }
                 }
                 break;
 
-            case EnemiStatus.Shearch:
+            case EnemiStatus.ReturnPatrol:
                 {
+                    Debug.Log("Repatrol");
+                    if (Vector2.Distance(transform.position, PatrolPointsLists[choicePatrol]) < 2)
+                    {
+                        _EnemiStatus = EnemiStatus.Patrol;
+                    }
 
+                    if (!findPathPatrol)
+                    {
+                        enemyTarget = PatrolPointsLists[choicePatrol];
+                        pathFinding.useFindPath(enemyTarget);
+                        findPathPatrol = true;
+                    }
+
+                    if (!notSeePlayer && Vector2.Distance(transform.position, playerTransform.position) < 3)
+                    {
+                        _EnemiStatus = EnemiStatus.Attack;
+                    }
+
+                    if(pathFinding.finalPath[0] == null || pathFinding.finalPath[1] == null)
+                    {
+                        _EnemiStatus = EnemiStatus.Patrol;
+                    }
+
+                    Vector3 diff = new Vector3(pathFinding.finalPath[1].Position.x - transform.position.x, pathFinding.finalPath[1].Position.y - transform.position.y, 0.0f);
+                    diff.Normalize();
+
+                    float rot_z = Mathf.Atan2(diff.y, -diff.x) * Mathf.Rad2Deg;
+                    transform.rotation = Quaternion.Euler(0f, 0f, rot_z - 90);
+
+                    body.velocity = new Vector2(pathFinding.finalPath[1].Position.x - transform.position.x, pathFinding.finalPath[1].Position.y - transform.position.y).normalized * moveSpeed;
+
+                    if (Vector2.Distance(transform.position, pathFinding.finalPath[1].Position) < 1)
+                    {
+                        pathFinding.finalPath.Clear();
+                        pathFinding.useFindPath(enemyTarget);
+                    }
                 }
                 break;
         }
@@ -136,9 +187,29 @@ public class EnemiScript : MonoBehaviour {
         yield return new WaitForSeconds(3);
     }
 
-    private IEnumerator CheckPlayerPos()
+    private IEnumerator LosePlayer()
     {
-        yield return new WaitForSeconds(0.3f);
-        LastPlayerPos = playerPosition.position;
+        yield return new WaitForSeconds(3);
+        if (notSeePlayer || Vector2.Distance(transform.position, playerTransform.position) > 4)
+            _EnemiStatus = EnemiStatus.ReturnPatrol;
+    }
+
+    public void setPatrolPoint(Vector2[] _PatrolPointsList)
+    {
+        PatrolPointsLists = _PatrolPointsList;
+    }
+
+    private void Fire()
+    {
+
+    }
+
+    private void OnDrawGizmos()
+    {
+        for(int i = 0; i < PatrolPointsLists.Length; i++)
+        {
+            Gizmos.color = Color.blue;
+            Gizmos.DrawCube(PatrolPointsLists[i], Vector3.one * 0.5f);
+        }
     }
 }

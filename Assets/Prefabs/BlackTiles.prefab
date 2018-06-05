@@ -21,7 +21,7 @@ GameObject:
   - component: {fileID: 4192357471604982}
   - component: {fileID: 212504307712876656}
   - component: {fileID: 61270267318357372}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: BlackTiles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
